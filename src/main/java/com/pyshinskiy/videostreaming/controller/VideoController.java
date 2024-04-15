@@ -4,7 +4,6 @@ import com.pyshinskiy.videostreaming.controller.constants.HttpConstants;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.io.InputStreamResource;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -15,7 +14,6 @@ import com.pyshinskiy.videostreaming.service.DefaultVideoService;
 import com.pyshinskiy.videostreaming.service.VideoService;
 import com.pyshinskiy.videostreaming.util.Range;
 
-import java.io.ByteArrayInputStream;
 import java.util.UUID;
 
 import static org.springframework.http.HttpHeaders.*;
