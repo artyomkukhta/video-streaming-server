@@ -22,7 +22,7 @@ public class Range {
             return Range.builder().start(0).end(defaultChunkSize).build();
         }
         int dashIndex = httpRangeString.indexOf("-");
-        long startRange = Long.parseLong(httpRangeString.substring(6, dashIndex));
+        long startRange = Long.parseLong(httpRangeString.substring(6, dashIndex));//TODO почему 6
         String endRangeString = httpRangeString.substring(dashIndex + 1);
         if (endRangeString.isEmpty()) {
             return Range.builder().start(startRange).end(startRange + defaultChunkSize).build();

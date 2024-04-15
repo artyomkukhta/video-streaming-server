@@ -1,6 +1,6 @@
 package com.pyshinskiy.videostreaming.service;
 
-import com.pyshinskiy.videostreaming.binarystorage.MinioStorageService;
+import com.pyshinskiy.videostreaming.binarystorage.LocalStorageService;
 import com.pyshinskiy.videostreaming.entity.FileMetadataEntity;
 import com.pyshinskiy.videostreaming.exception.StorageException;
 import com.pyshinskiy.videostreaming.repository.FileMetadataRepository;
@@ -19,7 +19,7 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class DefaultVideoService implements VideoService {
 
-    private final MinioStorageService storageService;
+    private final LocalStorageService storageService;
 
     private final FileMetadataRepository fileMetadataRepository;
 

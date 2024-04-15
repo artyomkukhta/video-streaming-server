@@ -4,6 +4,7 @@ import com.pyshinskiy.videostreaming.controller.constants.HttpConstants;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -13,6 +14,7 @@ import com.pyshinskiy.videostreaming.service.DefaultVideoService;
 import com.pyshinskiy.videostreaming.service.VideoService;
 import com.pyshinskiy.videostreaming.util.Range;
 
+import java.io.ByteArrayInputStream;
 import java.util.UUID;
 
 import static org.springframework.http.HttpHeaders.*;
@@ -20,13 +22,13 @@ import static org.springframework.http.HttpHeaders.*;
 @Slf4j
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/video")
+@RequestMapping("/api/streaming")
 public class VideoController {
 
     private final VideoService videoService;
 
     @Value("${photon.streaming.default-chunk-size}")
-    public Integer defaultChunkSize;
+    private Integer defaultChunkSize;
 
     @PostMapping
     public ResponseEntity<UUID> save(@RequestParam("file") MultipartFile file) {
@@ -35,10 +37,9 @@ public class VideoController {
     }
 
     @GetMapping("/{uuid}")
-    public ResponseEntity<byte[]> fetchChunk(
+    public ResponseEntity<InputStreamResource> fetchChunk(
             @RequestHeader(value = HttpHeaders.RANGE, required = false) String range,
-            @PathVariable UUID uuid
-    ) {
+            @PathVariable UUID uuid) {
         Range parsedRange = Range.parseHttpRangeString(range, defaultChunkSize);
         DefaultVideoService.ChunkWithMetadata chunkWithMetadata = videoService.fetchChunk(uuid, parsedRange);
         return ResponseEntity.status(HttpStatus.PARTIAL_CONTENT)
@@ -46,7 +47,7 @@ public class VideoController {
                 .header(ACCEPT_RANGES, HttpConstants.ACCEPTS_RANGES_VALUE)
                 .header(CONTENT_LENGTH, calculateContentLengthHeader(parsedRange, chunkWithMetadata.metadata().getSize()))
                 .header(CONTENT_RANGE, constructContentRangeHeader(parsedRange, chunkWithMetadata.metadata().getSize()))
-                .body(chunkWithMetadata.chunk());
+                .body(new InputStreamResource(new ByteArrayInputStream(chunkWithMetadata.chunk())));
     }
 
     private String calculateContentLengthHeader(Range range, long fileSize) {
