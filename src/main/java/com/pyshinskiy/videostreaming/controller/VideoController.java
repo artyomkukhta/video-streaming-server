@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.InputStreamResource;
+import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -37,7 +38,7 @@ public class VideoController {
     }
 
     @GetMapping("/{uuid}")
-    public ResponseEntity<InputStreamResource> fetchChunk(
+    public ResponseEntity<Resource> fetchChunk(
             @RequestHeader(value = HttpHeaders.RANGE, required = false) String range,
             @PathVariable UUID uuid) {
         Range parsedRange = Range.parseHttpRangeString(range, defaultChunkSize);
@@ -47,7 +48,7 @@ public class VideoController {
                 .header(ACCEPT_RANGES, HttpConstants.ACCEPTS_RANGES_VALUE)
                 .header(CONTENT_LENGTH, calculateContentLengthHeader(parsedRange, chunkWithMetadata.metadata().getSize()))
                 .header(CONTENT_RANGE, constructContentRangeHeader(parsedRange, chunkWithMetadata.metadata().getSize()))
-                .body(new InputStreamResource(new ByteArrayInputStream(chunkWithMetadata.chunk())));
+                .body(chunkWithMetadata.chunk());
     }
 
     private String calculateContentLengthHeader(Range range, long fileSize) {
