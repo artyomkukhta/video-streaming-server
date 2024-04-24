@@ -4,11 +4,17 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
+import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
+import org.springframework.core.io.support.ResourcePatternResolver;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.*;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -35,21 +41,46 @@ public class LocalStorageService {
     }
 
     public Resource getResource(UUID uuid, long offset, long length) throws IOException {
-        String fileName = uuid.toString() + ".mp4";
-        File videoFile = new File(VIDEO_DIRECTORY + fileName);
-        try (FileInputStream fileInputStream = new FileInputStream(videoFile)) {
-            long skipped = fileInputStream.skip(offset);
+
+//        String fileName = uuid.toString() + ".mp4";
+//        File videoFile = new File(VIDEO_DIRECTORY + fileName);
+
+        log.info("offset {} length {}", offset, length);
+        try (InputStream combinedInputStream = combineMultipleStreams(uuid.toString())) {
+            long skipped = combinedInputStream.skip(offset);
             if (skipped != offset) {
                 throw new IOException("Failed to skip to the specified offset");
             }
             byte[] chunkBytes = new byte[(int) length];
-            int bytesRead = fileInputStream.read(chunkBytes);
+            int bytesRead = combinedInputStream.read(chunkBytes);
             if (bytesRead < length) {
                 log.warn("Expected to read {} bytes but only {} bytes read", length, bytesRead);
             }
             return new ByteArrayResource(chunkBytes);
         }
     }
+
+    public InputStream combineMultipleStreams(String folderPath) throws IOException {
+        ResourcePatternResolver resolver = new PathMatchingResourcePatternResolver();
+        Resource[] resources = resolver.getResources("classpath*:videos/" + folderPath + "/*.mp4");
+
+        if (resources.length == 0) {
+            throw new IOException("No resources found in folder: " + folderPath);
+        }
+
+        List<InputStream> inputStreams = Arrays.stream(resources)
+                .map(resource -> {
+                    try {
+                        return resource.getInputStream();
+                    } catch (IOException e) {
+                        throw new RuntimeException("Error loading resource: " + resource.getFilename(), e);
+                    }
+                })
+                .collect(Collectors.toList());
+
+        return new SequenceInputStream(Collections.enumeration(inputStreams));
+    }
+
 
 
     private String getFileExtension(String filename) {
